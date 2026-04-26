@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Presupuesto Pro</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    color:white;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    padding:25px;
+}
+
+.header{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.header h1{
+    font-size:34px;
+}
+
+.header p{
+    color:#cbd5e1;
+    margin-top:8px;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;
+    margin-bottom:25px;
+}
+
+.card{
+    background:rgba(255,255,255,0.08);
+    padding:20px;
+    border-radius:18px;
+    backdrop-filter:blur(10px);
+}
+
+.card h3{
+    font-size:14px;
+    color:#94a3b8;
+}
+
+.card p{
+    font-size:28px;
+    font-weight:700;
+    margin-top:8px;
+}
+
+.section{
+    background:white;
+    color:#111827;
+    border-radius:20px;
+    padding:25px;
+    margin-bottom:25px;
+}
+
+canvas{
+    width:100%!important;
+    max-height:400px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+    font-size:14px;
+}
+
+th{
+    background:#f8fafc;
+}
+
+.loading{
+    text-align:center;
+    padding:30px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h1>📊 Dashboard Financiero</h1>
+<p>Resumen en tiempo real conectado a Google Sheets</p>
+</div>
+
+<div class="cards">
+<div class="card">
+<h3>Ingresos</h3>
+<p id="ingresos">$0</p>
+</div>
+
+<div class="card">
+<h3>Gastos</h3>
+<p id="gastos">$0</p>
+</div>
+
+<div class="card">
+<h3>Balance</h3>
+<p id="balance">$0</p>
+</div>
+
+<div class="card">
+<h3>Movimientos</h3>
+<p id="movimientos">0</p>
+</div>
+</div>
+
+<div class="section">
+<canvas id="grafica"></canvas>
+</div>
+
+<div class="section">
+<h2 style="margin-bottom:15px;">Últimos Movimientos</h2>
+
+<table>
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Categoría</th>
+<th>Descripción</th>
+<th>Monto</th>
+</tr>
+</thead>
+
+<tbody id="tabla">
+<tr><td colspan="4" class="loading">Cargando datos...</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+const URL_SCRIPT = "PEGA_AQUI_TU_URL_APPS_SCRIPT";
+
+async function cargarDatos(){
+
+try{
+
+const respuesta = await fetch(URL_SCRIPT);
+const datos = await respuesta.json();
+
+/*
+Se espera formato:
+[
+ {Fecha:"2026-04-01",Categoría:"Ingreso",Descripción:"Salario",Monto:1000,Tipo:"Ingreso"},
+ ...
+]
+*/
+
+let ingresos = 0;
+let gastos = 0;
+
+datos.forEach(item=>{
+
+let monto = Number(item.Monto);
+
+if(item.Tipo === "Ingreso"){
+ingresos += monto;
+}else{
+gastos += monto;
+}
+
+});
+
+let balance = ingresos - gastos;
+
+document.getElementById("ingresos").innerHTML =
+"$" + ingresos.toLocaleString();
+
+document.getElementById("gastos").innerHTML =
+"$" + gastos.toLocaleString();
+
+document.getElementById("balance").innerHTML =
+"$" + balance.toLocaleString();
+
+document.getElementById("movimientos").innerHTML =
+datos.length;
+
+let tabla = "";
+
+datos.slice(-10).reverse().forEach(item=>{
+
+tabla += `
+<tr>
+<td>${item.Fecha}</td>
+<td>${item.Categoría}</td>
+<td>${item.Descripción}</td>
+<td>$${Number(item.Monto).toLocaleString()}</td>
+</tr>
+`;
+
+});
+
+document.getElementById("tabla").innerHTML = tabla;
+
+new Chart(document.getElementById("grafica"),{
+type:"doughnut",
+data:{
+labels:["Ingresos","Gastos"],
+datasets:[{
+data:[ingresos,gastos]
+}]
+}
+});
+
+}catch(error){
+
+document.getElementById("tabla").innerHTML =
+"<tr><td colspan='4'>Error cargando datos</td></tr>";
+
+console.log(error);
+
+}
+
+}
+
+cargarDatos();
+</script>
+
+</body>
+</html>
