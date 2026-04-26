@@ -10,7 +10,7 @@ export default function BudgetPage(){
     e.preventDefault();
     setMsg('Guardando...');
     try {
-      const res = await fetch('TU_URL_DE_APPS_SCRIPT', {
+      const res = await fetch('https://script.google.com/a/macros/altamira.edu.co/s/AKfycbwRH7UdQgrh7lW_0zFzg6VDU7aZjDRdwqSImhV7juUGMnAjk9WxUF-otSdRW3iX07IK/exec', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
