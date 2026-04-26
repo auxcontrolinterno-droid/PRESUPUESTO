@@ -1,64 +1,147 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presupuesto Mensual</title>
 
-export default function BudgetPage(){
-  const [form, setForm] = useState({fecha:'', categoria:'', descripcion:'', monto:''});
-  const [msg, setMsg] = useState('');
-
-  const handleChange = (e) => setForm({...form,[e.target.name]:e.target.value});
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMsg('Guardando...');
-    try {
-      const res = await fetch('https://script.google.com/a/macros/altamira.edu.co/s/AKfycbwRH7UdQgrh7lW_0zFzg6VDU7aZjDRdwqSImhV7juUGMnAjk9WxUF-otSdRW3iX07IK/exec', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-        sheetName:'BASE DE DATOS',
-        Fecha: form.fecha,
-        Categoría: form.categoria,
-        Descripción: form.descripcion,
-        Monto: form.monto,
-        Tipo: form.categoria === 'Ingreso' ? 'Ingreso' : 'Gasto',
-        Mes: new Date(form.fecha).getMonth()+1,
-        Año: new Date(form.fecha).getFullYear()
-      })
-      });
-      await res.json();
-      setMsg('Registro guardado en Google Sheets');
-      setForm({fecha:'', categoria:'', descripcion:'', monto:''});
-    } catch(err){
-      setMsg('Error al guardar');
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-6 space-y-6">
-        <h1 className="text-3xl font-bold">Presupuesto Mensual</h1>
-        <p className="text-slate-600">Completa el formulario y guarda cada movimiento en Google Sheets.</p>
-
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          <input name="fecha" type="date" value={form.fecha} onChange={handleChange} className="border p-3 rounded-xl" required />
-          <select name="categoria" value={form.categoria} onChange={handleChange} className="border p-3 rounded-xl" required>
-            <option value="">Selecciona categoría</option>
-            <option>Ingreso</option>
-            <option>Vivienda</option>
-            <option>Comida</option>
-            <option>Transporte</option>
-            <option>Servicios</option>
-            <option>Entretenimiento</option>
-            <option>Ahorro</option>
-          </select>
-          <input name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="border p-3 rounded-xl" required />
-          <input name="monto" type="number" placeholder="Monto" value={form.monto} onChange={handleChange} className="border p-3 rounded-xl" required />
-          <button className="bg-slate-900 text-white rounded-xl p-3">Guardar</button>
-        </form>
-
-        {msg && <div className="text-sm text-slate-600">{msg}</div>}
-
-        <div className="text-sm text-slate-500">La hoja destino configurada es: BASE DE DATOS. Reemplaza TU_URL_DE_APPS_SCRIPT con tu URL de Google Apps Script.</div>
-      </div>
-    </div>
-  )
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f6f8;
+    margin:0;
+    padding:0;
 }
+
+.container{
+    max-width:600px;
+    margin:50px auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+h1{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+p{
+    text-align:center;
+    color:#666;
+    margin-bottom:25px;
+}
+
+input,select,button{
+    width:100%;
+    padding:14px;
+    margin-bottom:15px;
+    border-radius:10px;
+    border:1px solid #ddd;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    background:#111827;
+    color:white;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+#mensaje{
+    text-align:center;
+    font-weight:bold;
+    margin-top:10px;
+    color:green;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Presupuesto Mensual</h1>
+    <p>Registra ingresos y gastos en Google Sheets</p>
+
+    <form id="formulario">
+
+        <input type="date" id="fecha" required>
+
+        <select id="categoria" required>
+            <option value="">Selecciona categoría</option>
+            <option value="Ingreso">Ingreso</option>
+            <option value="Vivienda">Vivienda</option>
+            <option value="Comida">Comida</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Servicios">Servicios</option>
+            <option value="Entretenimiento">Entretenimiento</option>
+            <option value="Ahorro">Ahorro</option>
+        </select>
+
+        <input type="text" id="descripcion" placeholder="Descripción" required>
+
+        <input type="number" id="monto" placeholder="Monto" required>
+
+        <button type="submit">Guardar Registro</button>
+
+    </form>
+
+    <div id="mensaje"></div>
+</div>
+
+<script>
+const URL_SCRIPT = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
+
+document.getElementById("formulario").addEventListener("submit", async function(e){
+    e.preventDefault();
+
+    const fecha = document.getElementById("fecha").value;
+    const categoria = document.getElementById("categoria").value;
+    const descripcion = document.getElementById("descripcion").value;
+    const monto = document.getElementById("monto").value;
+
+    const tipo = categoria === "Ingreso" ? "Ingreso" : "Gasto";
+
+    const fechaObj = new Date(fecha);
+    const mes = fechaObj.getMonth() + 1;
+    const año = fechaObj.getFullYear();
+
+    const datos = {
+        Fecha: fecha,
+        Categoría: categoria,
+        Descripción: descripcion,
+        Monto: monto,
+        Tipo: tipo,
+        Mes: mes,
+        Año: año
+    };
+
+    document.getElementById("mensaje").innerHTML = "Guardando...";
+
+    try{
+        const respuesta = await fetch(URL_SCRIPT,{
+            method:"POST",
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        document.getElementById("mensaje").innerHTML = "Registro guardado correctamente";
+
+        document.getElementById("formulario").reset();
+
+    }catch(error){
+        document.getElementById("mensaje").innerHTML = "Error al guardar";
+    }
+});
+</script>
+
+</body>
+</html>
