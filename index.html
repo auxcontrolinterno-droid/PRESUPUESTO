@@ -5,61 +5,105 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presupuesto Mensual</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
+*{box-sizing:border-box;margin:0;padding:0}
+
 body{
-    font-family: Arial, sans-serif;
-    background:#f4f6f8;
-    margin:0;
-    padding:0;
+  font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:white;
 }
 
 .container{
-    max-width:600px;
-    margin:50px auto;
-    background:white;
-    padding:30px;
-    border-radius:15px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+  max-width:900px;
+  margin:auto;
+  padding:20px;
 }
 
-h1{
-    text-align:center;
-    margin-bottom:10px;
+.header{
+  text-align:center;
+  margin-bottom:25px;
 }
 
-p{
-    text-align:center;
-    color:#666;
-    margin-bottom:25px;
+.header h1{
+  font-size:32px;
 }
 
-input,select,button{
-    width:100%;
-    padding:14px;
-    margin-bottom:15px;
-    border-radius:10px;
-    border:1px solid #ddd;
-    font-size:16px;
-    box-sizing:border-box;
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:15px;
+  margin-bottom:25px;
+}
+
+.card{
+  background:rgba(255,255,255,0.08);
+  padding:20px;
+  border-radius:15px;
+  backdrop-filter:blur(10px);
+}
+
+.card h3{
+  font-size:14px;
+  color:#cbd5f5;
+}
+
+.card p{
+  font-size:22px;
+  margin-top:5px;
+  font-weight:bold;
+}
+
+.form{
+  background:white;
+  color:black;
+  padding:25px;
+  border-radius:20px;
+}
+
+input,select{
+  width:100%;
+  padding:14px;
+  margin-bottom:15px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  font-size:15px;
 }
 
 button{
-    background:#111827;
-    color:white;
-    border:none;
-    cursor:pointer;
-    font-weight:bold;
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#0f172a;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+  transition:.3s;
 }
 
 button:hover{
-    opacity:.9;
+  transform:scale(1.02);
 }
 
 #mensaje{
-    text-align:center;
-    font-weight:bold;
-    margin-top:10px;
-    color:green;
+  margin-top:10px;
+  text-align:center;
+  font-weight:600;
+}
+
+.loading{
+  color:orange;
+}
+
+.success{
+  color:green;
+}
+
+.error{
+  color:red;
 }
 </style>
 </head>
@@ -67,79 +111,109 @@ button:hover{
 <body>
 
 <div class="container">
-    <h1>Presupuesto Mensual</h1>
-    <p>Registra ingresos y gastos en Google Sheets</p>
 
+  <div class="header">
+    <h1>💰 Presupuesto Mensual</h1>
+    <p>Controla tus ingresos y gastos fácilmente</p>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3>Ingresos</h3>
+      <p id="ingresos">$0</p>
+    </div>
+    <div class="card">
+      <h3>Gastos</h3>
+      <p id="gastos">$0</p>
+    </div>
+  </div>
+
+  <div class="form">
     <form id="formulario">
 
-        <input type="date" id="fecha" required>
+      <input type="date" id="fecha" required>
 
-        <select id="categoria" required>
-            <option value="">Selecciona categoría</option>
-            <option value="Ingreso">Ingreso</option>
-            <option value="Vivienda">Vivienda</option>
-            <option value="Comida">Comida</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Servicios">Servicios</option>
-            <option value="Entretenimiento">Entretenimiento</option>
-            <option value="Ahorro">Ahorro</option>
-        </select>
+      <select id="categoria" required>
+        <option value="">Selecciona categoría</option>
+        <option value="Ingreso">Ingreso</option>
+        <option value="Vivienda">Vivienda</option>
+        <option value="Comida">Comida</option>
+        <option value="Transporte">Transporte</option>
+        <option value="Servicios">Servicios</option>
+        <option value="Entretenimiento">Entretenimiento</option>
+        <option value="Ahorro">Ahorro</option>
+      </select>
 
-        <input type="text" id="descripcion" placeholder="Descripción" required>
+      <input type="text" id="descripcion" placeholder="Descripción" required>
 
-        <input type="number" id="monto" placeholder="Monto" required>
+      <input type="number" id="monto" placeholder="Monto" required>
 
-        <button type="submit">Guardar Registro</button>
+      <button type="submit">Guardar Registro</button>
 
     </form>
 
     <div id="mensaje"></div>
+  </div>
+
 </div>
 
 <script>
-const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwRH7UdQgrh7lW_0zFzg6VDU7aZjDRdwqSImhV7juUGMnAjk9WxUF-otSdRW3iX07IK/exec";
+const URL_SCRIPT = "PEGA_AQUI_TU_URL";
+
+let totalIngresos = 0;
+let totalGastos = 0;
 
 document.getElementById("formulario").addEventListener("submit", async function(e){
-    e.preventDefault();
+  e.preventDefault();
 
-    const fecha = document.getElementById("fecha").value;
-    const categoria = document.getElementById("categoria").value;
-    const descripcion = document.getElementById("descripcion").value;
-    const monto = document.getElementById("monto").value;
+  const fecha = document.getElementById("fecha").value;
+  const categoria = document.getElementById("categoria").value;
+  const descripcion = document.getElementById("descripcion").value;
+  const monto = Number(document.getElementById("monto").value);
 
-    const tipo = categoria === "Ingreso" ? "Ingreso" : "Gasto";
+  const tipo = categoria === "Ingreso" ? "Ingreso" : "Gasto";
 
-    const fechaObj = new Date(fecha);
-    const mes = fechaObj.getMonth() + 1;
-    const año = fechaObj.getFullYear();
+  const fechaObj = new Date(fecha);
 
-    const datos = {
-        Fecha: fecha,
-        Categoría: categoria,
-        Descripción: descripcion,
-        Monto: monto,
-        Tipo: tipo,
-        Mes: mes,
-        Año: año
-    };
+  const datos = {
+    Fecha: fecha,
+    Categoría: categoria,
+    Descripción: descripcion,
+    Monto: monto,
+    Tipo: tipo,
+    Mes: fechaObj.getMonth()+1,
+    Año: fechaObj.getFullYear()
+  };
 
-    document.getElementById("mensaje").innerHTML = "Guardando...";
+  const mensaje = document.getElementById("mensaje");
+  mensaje.className = "loading";
+  mensaje.innerText = "Guardando...";
 
-    try{
-        const respuesta = await fetch(URL_SCRIPT,{
-            method:"POST",
-            body: JSON.stringify(datos)
-        });
+  try{
+    await fetch(URL_SCRIPT,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(datos)
+    });
 
-        const resultado = await respuesta.json();
-
-        document.getElementById("mensaje").innerHTML = "Registro guardado correctamente";
-
-        document.getElementById("formulario").reset();
-
-    }catch(error){
-        document.getElementById("mensaje").innerHTML = "Error al guardar";
+    if(tipo === "Ingreso"){
+      totalIngresos += monto;
+    } else {
+      totalGastos += monto;
     }
+
+    document.getElementById("ingresos").innerText = "$" + totalIngresos;
+    document.getElementById("gastos").innerText = "$" + totalGastos;
+
+    mensaje.className = "success";
+    mensaje.innerText = "✔ Guardado correctamente";
+
+    document.getElementById("formulario").reset();
+
+  }catch(err){
+    mensaje.className = "error";
+    mensaje.innerText = "❌ Error al guardar";
+  }
 });
 </script>
 
