@@ -160,60 +160,50 @@ button:hover{
 <script>
 const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwRH7UdQgrh7lW_0zFzg6VDU7aZjDRdwqSImhV7juUGMnAjk9WxUF-otSdRW3iX07IK/exec";
 
-let totalIngresos = 0;
-let totalGastos = 0;
-
 document.getElementById("formulario").addEventListener("submit", async function(e){
-  e.preventDefault();
+    e.preventDefault();
 
-  const fecha = document.getElementById("fecha").value;
-  const categoria = document.getElementById("categoria").value;
-  const descripcion = document.getElementById("descripcion").value;
-  const monto = Number(document.getElementById("monto").value);
+    const fecha = document.getElementById("fecha").value;
+    const categoria = document.getElementById("categoria").value;
+    const descripcion = document.getElementById("descripcion").value;
+    const monto = document.getElementById("monto").value;
 
-  const tipo = categoria === "Ingreso" ? "Ingreso" : "Gasto";
+    const tipo = categoria === "Ingreso" ? "Ingreso" : "Gasto";
 
-  const fechaObj = new Date(fecha);
+    const d = new Date(fecha);
 
-  const datos = {
-    Fecha: fecha,
-    Categoría: categoria,
-    Descripción: descripcion,
-    Monto: monto,
-    Tipo: tipo,
-    Mes: fechaObj.getMonth()+1,
-    Año: fechaObj.getFullYear()
-  };
+    const datos = {
+        Fecha: fecha,
+        Categoría: categoria,
+        Descripción: descripcion,
+        Monto: monto,
+        Tipo: tipo,
+        Mes: d.getMonth()+1,
+        Año: d.getFullYear()
+    };
 
-  const mensaje = document.getElementById("mensaje");
-  mensaje.className = "loading";
-  mensaje.innerText = "Guardando...";
+    const mensaje = document.getElementById("mensaje");
+    mensaje.innerHTML = "Guardando...";
 
-  try{
-    await fetch(URL_SCRIPT,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(datos)
-    });
+    try{
 
-    if(tipo === "Ingreso"){
-      totalIngresos += monto;
-    } else {
-      totalGastos += monto;
+        await fetch(URL_SCRIPT, {
+            method: "POST",
+            mode: "no-cors",
+            headers:{
+              "Content-Type":"application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        mensaje.innerHTML = "✔ Guardado correctamente";
+        document.getElementById("formulario").reset();
+
+    }catch(error){
+        mensaje.innerHTML = "❌ Error al guardar";
+        console.log(error);
     }
 
-    document.getElementById("ingresos").innerText = "$" + totalIngresos;
-    document.getElementById("gastos").innerText = "$" + totalGastos;
-
-    mensaje.className = "success";
-    mensaje.innerText = "✔ Guardado correctamente";
-
-    document.getElementById("formulario").reset();
-
-  }catch(err){
-    mensaje.className = "error";
-    mensaje.innerText = "❌ Error al guardar";
-  }
 });
 </script>
 
