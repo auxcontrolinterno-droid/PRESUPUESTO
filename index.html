@@ -1,0 +1,64 @@
+import { useState } from "react";
+
+export default function BudgetPage(){
+  const [form, setForm] = useState({fecha:'', categoria:'', descripcion:'', monto:''});
+  const [msg, setMsg] = useState('');
+
+  const handleChange = (e) => setForm({...form,[e.target.name]:e.target.value});
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMsg('Guardando...');
+    try {
+      const res = await fetch('TU_URL_DE_APPS_SCRIPT', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+        sheetName:'BASE DE DATOS',
+        Fecha: form.fecha,
+        Categoría: form.categoria,
+        Descripción: form.descripcion,
+        Monto: form.monto,
+        Tipo: form.categoria === 'Ingreso' ? 'Ingreso' : 'Gasto',
+        Mes: new Date(form.fecha).getMonth()+1,
+        Año: new Date(form.fecha).getFullYear()
+      })
+      });
+      await res.json();
+      setMsg('Registro guardado en Google Sheets');
+      setForm({fecha:'', categoria:'', descripcion:'', monto:''});
+    } catch(err){
+      setMsg('Error al guardar');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-6">
+      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-6 space-y-6">
+        <h1 className="text-3xl font-bold">Presupuesto Mensual</h1>
+        <p className="text-slate-600">Completa el formulario y guarda cada movimiento en Google Sheets.</p>
+
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <input name="fecha" type="date" value={form.fecha} onChange={handleChange} className="border p-3 rounded-xl" required />
+          <select name="categoria" value={form.categoria} onChange={handleChange} className="border p-3 rounded-xl" required>
+            <option value="">Selecciona categoría</option>
+            <option>Ingreso</option>
+            <option>Vivienda</option>
+            <option>Comida</option>
+            <option>Transporte</option>
+            <option>Servicios</option>
+            <option>Entretenimiento</option>
+            <option>Ahorro</option>
+          </select>
+          <input name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="border p-3 rounded-xl" required />
+          <input name="monto" type="number" placeholder="Monto" value={form.monto} onChange={handleChange} className="border p-3 rounded-xl" required />
+          <button className="bg-slate-900 text-white rounded-xl p-3">Guardar</button>
+        </form>
+
+        {msg && <div className="text-sm text-slate-600">{msg}</div>}
+
+        <div className="text-sm text-slate-500">La hoja destino configurada es: BASE DE DATOS. Reemplaza TU_URL_DE_APPS_SCRIPT con tu URL de Google Apps Script.</div>
+      </div>
+    </div>
+  )
+}
