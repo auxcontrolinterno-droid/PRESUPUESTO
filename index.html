@@ -160,17 +160,21 @@ button:hover{
 <script>
 const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwRH7UdQgrh7lW_0zFzg6VDU7aZjDRdwqSImhV7juUGMnAjk9WxUF-otSdRW3iX07IK/exec";
 
+let totalIngresos = 0;
+let totalGastos = 0;
+
 document.getElementById("formulario").addEventListener("submit", async function(e){
+
     e.preventDefault();
 
     const fecha = document.getElementById("fecha").value;
     const categoria = document.getElementById("categoria").value;
     const descripcion = document.getElementById("descripcion").value;
-    const monto = document.getElementById("monto").value;
+    const monto = Number(document.getElementById("monto").value);
 
     const tipo = categoria === "Ingreso" ? "Ingreso" : "Gasto";
 
-    const d = new Date(fecha);
+    const f = new Date(fecha);
 
     const datos = {
         Fecha: fecha,
@@ -178,8 +182,8 @@ document.getElementById("formulario").addEventListener("submit", async function(
         Descripción: descripcion,
         Monto: monto,
         Tipo: tipo,
-        Mes: d.getMonth()+1,
-        Año: d.getFullYear()
+        Mes: f.getMonth()+1,
+        Año: f.getFullYear()
     };
 
     const mensaje = document.getElementById("mensaje");
@@ -187,16 +191,26 @@ document.getElementById("formulario").addEventListener("submit", async function(
 
     try{
 
-        await fetch(URL_SCRIPT, {
-            method: "POST",
-            mode: "no-cors",
+        await fetch(URL_SCRIPT,{
+            method:"POST",
+            mode:"no-cors",
             headers:{
-              "Content-Type":"application/json"
+                "Content-Type":"application/json"
             },
             body: JSON.stringify(datos)
         });
 
+        if(tipo === "Ingreso"){
+            totalIngresos += monto;
+        }else{
+            totalGastos += monto;
+        }
+
+        document.getElementById("ingresos").innerHTML = "$" + totalIngresos.toLocaleString();
+        document.getElementById("gastos").innerHTML = "$" + totalGastos.toLocaleString();
+
         mensaje.innerHTML = "✔ Guardado correctamente";
+
         document.getElementById("formulario").reset();
 
     }catch(error){
