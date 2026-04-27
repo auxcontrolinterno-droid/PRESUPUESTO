@@ -24,7 +24,7 @@ body{
 .container{
     max-width:1200px;
     margin:auto;
-    padding:25px;
+    padding:20px;
 }
 
 .header{
@@ -33,7 +33,7 @@ body{
 }
 
 .header h1{
-    font-size:34px;
+    font-size:32px;
 }
 
 .header p{
@@ -70,8 +70,9 @@ body{
     background:white;
     color:#111827;
     border-radius:20px;
-    padding:25px;
+    padding:20px;
     margin-bottom:25px;
+    overflow:hidden;
 }
 
 canvas{
@@ -79,8 +80,14 @@ canvas{
     max-height:400px;
 }
 
+.table-wrap{
+    width:100%;
+    overflow-x:auto;
+}
+
 table{
     width:100%;
+    min-width:600px;
     border-collapse:collapse;
 }
 
@@ -95,9 +102,53 @@ th{
     background:#f8fafc;
 }
 
+td:last-child,
+th:last-child{
+    text-align:right;
+    white-space:nowrap;
+}
+
 .loading{
     text-align:center;
     padding:30px;
+}
+
+@media(max-width:768px){
+
+.container{
+    padding:12px;
+}
+
+.header h1{
+    font-size:26px;
+}
+
+.header p{
+    font-size:14px;
+}
+
+.cards{
+    grid-template-columns:1fr;
+}
+
+.card p{
+    font-size:24px;
+}
+
+.section h2{
+    font-size:28px;
+    margin-bottom:15px;
+}
+
+th,td{
+    font-size:13px;
+    padding:10px;
+}
+
+canvas{
+    max-height:300px;
+}
+
 }
 </style>
 </head>
@@ -112,6 +163,7 @@ th{
 </div>
 
 <div class="cards">
+
 <div class="card">
 <h3>Ingresos</h3>
 <p id="ingresos">$0</p>
@@ -131,6 +183,7 @@ th{
 <h3>Movimientos</h3>
 <p id="movimientos">0</p>
 </div>
+
 </div>
 
 <div class="section">
@@ -139,6 +192,8 @@ th{
 
 <div class="section">
 <h2 style="margin-bottom:15px;">Últimos Movimientos</h2>
+
+<div class="table-wrap">
 
 <table>
 <thead>
@@ -151,9 +206,13 @@ th{
 </thead>
 
 <tbody id="tabla">
-<tr><td colspan="4" class="loading">Cargando datos...</td></tr>
+<tr>
+<td colspan="4" class="loading">Cargando datos...</td>
+</tr>
 </tbody>
 </table>
+
+</div>
 </div>
 
 </div>
@@ -168,14 +227,6 @@ try{
 const respuesta = await fetch(URL_SCRIPT);
 const datos = await respuesta.json();
 
-/*
-Se espera formato:
-[
- {Fecha:"2026-04-01",Categoría:"Ingreso",Descripción:"Salario",Monto:1000,Tipo:"Ingreso"},
- ...
-]
-*/
-
 let ingresos = 0;
 let gastos = 0;
 
@@ -184,9 +235,9 @@ datos.forEach(item=>{
 let monto = Number(item.Monto);
 
 if(item.Tipo === "Ingreso"){
-ingresos += monto;
+    ingresos += monto;
 }else{
-gastos += monto;
+    gastos += monto;
 }
 
 });
@@ -229,6 +280,10 @@ labels:["Ingresos","Gastos"],
 datasets:[{
 data:[ingresos,gastos]
 }]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false
 }
 });
 
