@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Presupuesto Pro</title>
+<title>Dashboard Financiero con Historial</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -24,7 +24,7 @@ body{
 .container{
     max-width:1200px;
     margin:auto;
-    padding:20px;
+    padding:18px;
 }
 
 .header{
@@ -41,6 +41,22 @@ body{
     margin-top:8px;
 }
 
+.filtro{
+    background:rgba(255,255,255,0.08);
+    padding:15px;
+    border-radius:18px;
+    margin-bottom:20px;
+}
+
+select{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    font-size:16px;
+    outline:none;
+}
+
 .cards{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -52,7 +68,6 @@ body{
     background:rgba(255,255,255,0.08);
     padding:20px;
     border-radius:18px;
-    backdrop-filter:blur(10px);
 }
 
 .card h3{
@@ -77,11 +92,10 @@ body{
 
 canvas{
     width:100%!important;
-    max-height:400px;
+    max-height:350px;
 }
 
 .table-wrap{
-    width:100%;
     overflow-x:auto;
 }
 
@@ -94,8 +108,8 @@ table{
 th,td{
     padding:12px;
     border-bottom:1px solid #e5e7eb;
-    text-align:left;
     font-size:14px;
+    text-align:left;
 }
 
 th{
@@ -105,26 +119,12 @@ th{
 td:last-child,
 th:last-child{
     text-align:right;
-    white-space:nowrap;
-}
-
-.loading{
-    text-align:center;
-    padding:30px;
 }
 
 @media(max-width:768px){
 
-.container{
-    padding:12px;
-}
-
 .header h1{
     font-size:26px;
-}
-
-.header p{
-    font-size:14px;
 }
 
 .cards{
@@ -135,18 +135,9 @@ th:last-child{
     font-size:24px;
 }
 
-.section h2{
-    font-size:28px;
-    margin-bottom:15px;
-}
-
 th,td{
     font-size:13px;
     padding:10px;
-}
-
-canvas{
-    max-height:300px;
 }
 
 }
@@ -159,7 +150,11 @@ canvas{
 
 <div class="header">
 <h1>📊 Dashboard Financiero</h1>
-<p>Resumen en tiempo real conectado a Google Sheets</p>
+<p>Con historial mensual</p>
+</div>
+
+<div class="filtro">
+<select id="selectorMes"></select>
 </div>
 
 <div class="cards">
@@ -187,14 +182,18 @@ canvas{
 </div>
 
 <div class="section">
-<canvas id="grafica"></canvas>
+<canvas id="graficaMes"></canvas>
+</div>
+
+<div class="section">
+<h2 style="margin-bottom:15px;">Historial General</h2>
+<canvas id="graficaHistorial"></canvas>
 </div>
 
 <div class="section">
 <h2 style="margin-bottom:15px;">Últimos Movimientos</h2>
 
 <div class="table-wrap">
-
 <table>
 <thead>
 <tr>
@@ -207,12 +206,12 @@ canvas{
 
 <tbody id="tabla">
 <tr>
-<td colspan="4" class="loading">Cargando datos...</td>
+<td colspan="4">Cargando...</td>
 </tr>
 </tbody>
 </table>
-
 </div>
+
 </div>
 
 </div>
@@ -220,45 +219,77 @@ canvas{
 <script>
 const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwRH7UdQgrh7lW_0zFzg6VDU7aZjDRdwqSImhV7juUGMnAjk9WxUF-otSdRW3iX07IK/exec";
 
+let datosGlobal = [];
+let chartMes = null;
+let chartHistorial = null;
+
+function obtenerMes(fecha){
+let d = new Date(fecha);
+return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+}
+
+function nombreMes(valor){
+const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+let partes = valor.split("-");
+return meses[Number(partes[1])-1] + " " + partes[0];
+}
+
 async function cargarDatos(){
 
-try{
+const res = await fetch(URL_SCRIPT);
+datosGlobal = await res.json();
 
-const respuesta = await fetch(URL_SCRIPT);
-const datos = await respuesta.json();
+crearSelector();
+crearHistorial();
+actualizarMes();
+
+}
+
+function crearSelector(){
+
+let meses = [...new Set(datosGlobal.map(x => obtenerMes(x.Fecha)))].reverse();
+
+let html = "";
+
+meses.forEach(m=>{
+html += `<option value="${m}">${nombreMes(m)}</option>`;
+});
+
+document.getElementById("selectorMes").innerHTML = html;
+
+document.getElementById("selectorMes").addEventListener("change",actualizarMes);
+
+}
+
+function actualizarMes(){
+
+let mes = document.getElementById("selectorMes").value;
+
+let datos = datosGlobal.filter(x => obtenerMes(x.Fecha) === mes);
 
 let ingresos = 0;
 let gastos = 0;
 
 datos.forEach(item=>{
-
 let monto = Number(item.Monto);
 
 if(item.Tipo === "Ingreso"){
-    ingresos += monto;
+ingresos += monto;
 }else{
-    gastos += monto;
+gastos += monto;
 }
-
 });
 
 let balance = ingresos - gastos;
 
-document.getElementById("ingresos").innerHTML =
-"$" + ingresos.toLocaleString();
-
-document.getElementById("gastos").innerHTML =
-"$" + gastos.toLocaleString();
-
-document.getElementById("balance").innerHTML =
-"$" + balance.toLocaleString();
-
-document.getElementById("movimientos").innerHTML =
-datos.length;
+document.getElementById("ingresos").innerHTML = "$" + ingresos.toLocaleString();
+document.getElementById("gastos").innerHTML = "$" + gastos.toLocaleString();
+document.getElementById("balance").innerHTML = "$" + balance.toLocaleString();
+document.getElementById("movimientos").innerHTML = datos.length;
 
 let tabla = "";
 
-datos.slice(-10).reverse().forEach(item=>{
+datos.slice().reverse().forEach(item=>{
 
 tabla += `
 <tr>
@@ -271,9 +302,11 @@ tabla += `
 
 });
 
-document.getElementById("tabla").innerHTML = tabla;
+document.getElementById("tabla").innerHTML = tabla || "<tr><td colspan='4'>Sin movimientos</td></tr>";
 
-new Chart(document.getElementById("grafica"),{
+if(chartMes) chartMes.destroy();
+
+chartMes = new Chart(document.getElementById("graficaMes"),{
 type:"doughnut",
 data:{
 labels:["Ingresos","Gastos"],
@@ -282,19 +315,50 @@ data:[ingresos,gastos]
 }]
 },
 options:{
-responsive:true,
-maintainAspectRatio:false
+responsive:true
 }
 });
 
-}catch(error){
-
-document.getElementById("tabla").innerHTML =
-"<tr><td colspan='4'>Error cargando datos</td></tr>";
-
-console.log(error);
-
 }
+
+function crearHistorial(){
+
+let resumen = {};
+
+datosGlobal.forEach(item=>{
+
+let mes = obtenerMes(item.Fecha);
+
+if(!resumen[mes]){
+resumen[mes] = {ingresos:0,gastos:0};
+}
+
+if(item.Tipo === "Ingreso"){
+resumen[mes].ingresos += Number(item.Monto);
+}else{
+resumen[mes].gastos += Number(item.Monto);
+}
+
+});
+
+let labels = Object.keys(resumen).sort();
+let balances = labels.map(m => resumen[m].ingresos - resumen[m].gastos);
+
+if(chartHistorial) chartHistorial.destroy();
+
+chartHistorial = new Chart(document.getElementById("graficaHistorial"),{
+type:"bar",
+data:{
+labels:labels.map(nombreMes),
+datasets:[{
+label:"Balance",
+data:balances
+}]
+},
+options:{
+responsive:true
+}
+});
 
 }
 
